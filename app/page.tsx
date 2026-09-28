@@ -1,19 +1,28 @@
+import Link from "next/link"
+
+import { Logo } from "@/components/shared/logo"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { Button } from "@/components/ui/button"
 
+// Placeholder home. The real marketing site lands in Phase 3 (route group
+// `(marketing)`); for now this just gives a way into the auth screens.
 export default function Page() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-8 p-6">
+      <Logo />
+      <div className="flex flex-col items-center gap-2 text-center">
+        <h1 className="text-2xl font-bold">Lumen LMS</h1>
+        <p className="text-muted-foreground text-sm">
+          Auth is wired up. Sign in or create an account to test it.
+        </p>
       </div>
+      <div className="flex gap-3">
+        <Button render={<Link href="/login" />}>Log in</Button>
+        <Button variant="outline" render={<Link href="/register" />}>
+          Register
+        </Button>
+      </div>
+      <ThemeToggle />
     </div>
   )
 }

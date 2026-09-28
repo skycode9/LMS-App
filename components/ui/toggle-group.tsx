@@ -4,8 +4,8 @@ import * as React from "react"
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group"
 import { type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
 
+import { cn } from "@/lib/utils"
 import { toggleVariants } from "@/components/ui/toggle"
 
 const ToggleGroupContext = React.createContext<
@@ -36,6 +36,9 @@ function ToggleGroup({
   return (
     <ToggleGroupPrimitive
       data-slot="toggle-group"
+      // Base UI drives roving arrow-key focus off this; without it a vertical
+      // group still only responds to Left/Right.
+      orientation={orientation}
       data-variant={variant}
       data-size={size}
       data-spacing={spacing}

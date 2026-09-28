@@ -1,0 +1,107 @@
+import { Resend } from "resend"
+
+import { siteConfig } from "@/lib/config/site"
+
+/**
+ * Transactional email, used by the Better Auth handlers in `lib/auth.ts`.
+ *
+ * Resend only wakes up once `RESEND_API_KEY` is set; until then every message
+ * is written to the server console with its link intact, so verification and
+ * password-reset flows are testable before the domain is verified. That
+ * fallback is deliberately noisy — and deliberately dev-only, since a
+ * production deploy silently logging reset links would be a security problem.
+ */
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null
+
+const from = process.env.EMAIL_FROM ?? "Lumen <onboarding@resend.dev>"
+
+type Mail = {
+  to: string
+  subject: string
+  text: string
+}
+
+async function sendMail({ to, subject, text }: Mail) {
+  if (!resend) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "RESEND_API_KEY is not set — refusing to drop a transactional email in production."
+      )
+    }
+    console.info(
+      `\n[email:dev] to=${to}\n[email:dev] subject=${subject}\n${text}\n`
+    )
+    return
+  }
+
+  const { error } = await resend.emails.send({ from, to, subject, text })
+  if (error) {
+    throw new Error(`Resend refused the message: ${error.message}`)
+  }
+}
+
+function sendVerificationEmail(to: string, url: string) {
+  return sendMail({
+    to,
+    subject: `Verify your ${siteConfig.name} email`,
+    text: `Confirm this address to finish setting up your ${siteConfig.name} account:\n\n${url}\n\nIf you didn't sign up, ignore this message.`,
+  })
+}
+
+/**
+ * The mail an admin-created account gets. Same link as a password reset —
+ * Better Auth mints one token for "prove this address is yours and choose a
+ * password", and that is precisely what an invitee needs — but not the same
+ * words: telling someone to *reset* a password they were never given reads as
+ * a message meant for somebody else. `lib/auth.ts` picks between the two.
+ */
+function sendInvitationEmail(to: string, url: string) {
+  return sendMail({
+    to,
+    subject: `You have been added to ${siteConfig.name}`,
+    text: `An account has been created for you on ${siteConfig.name}.\n\nChoose a password to finish setting it up:\n\n${url}\n\nIf you weren't expecting this, ignore the message — the account can't be used until a password is set.`,
+  })
+}
+
+/**
+ * The confirmation Better Auth sends when somebody changes their email.
+ *
+ * It goes to the **current** address, not the new one, which is the whole
+ * point: the link is what proves the person asking for the change is the
+ * person who already controls the account. Somebody who walks up to an
+ * unlocked laptop cannot quietly repoint the account at an address of their
+ * own, because the mail lands in the inbox of whoever owns it today.
+ *
+ * The new address is named in the body for the same reason — if this arrives
+ * unexpectedly it has to say what was asked for, so the owner knows what to
+ * ignore and what to go and undo.
+ */
+function sendChangeEmailConfirmation(
+  to: string,
+  newEmail: string,
+  url: string
+) {
+  return sendMail({
+    to,
+    subject: `Confirm your new ${siteConfig.name} email address`,
+    text: `A request was made to change the email on your ${siteConfig.name} account to ${newEmail}.\n\nConfirm the change:\n\n${url}\n\nIf you didn't ask for this, ignore the message — your address stays as it is. It may also be worth changing your password.`,
+  })
+}
+
+function sendPasswordResetEmail(to: string, url: string) {
+  return sendMail({
+    to,
+    subject: `Reset your ${siteConfig.name} password`,
+    text: `Choose a new password:\n\n${url}\n\nThe link expires in an hour. If you didn't ask for it, ignore this message — nothing has changed.`,
+  })
+}
+
+export {
+  sendChangeEmailConfirmation,
+  sendInvitationEmail,
+  sendMail,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+}
