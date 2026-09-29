@@ -40,4 +40,3 @@ next-env.d.ts
 
 # local-only (not for the repo)
 /.neon
-CLAUDE.md
