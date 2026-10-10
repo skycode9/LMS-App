@@ -1,11 +1,39 @@
 import { Suspense } from "react"
+import type { Metadata, Viewport } from "next"
 import { Figtree, Geist_Mono, Lora } from "next/font/google"
 
 import "./globals.css"
 import { NavigationProgress } from "@/components/shared/navigation-progress"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toast"
+import { siteConfig } from "@/lib/config/site"
 import { cn } from "@/lib/utils"
+
+const title = `${siteConfig.name} — ${siteConfig.description}`
+const description =
+  "A full-stack learning platform: browse and buy courses, learn with video, articles and quizzes, earn certificates — and teach, moderate and run the platform from dedicated instructor and admin consoles."
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
+  title: { default: title, template: `%s` },
+  description,
+  applicationName: siteConfig.name,
+  openGraph: {
+    type: "website",
+    siteName: siteConfig.name,
+    title,
+    description,
+    url: "/",
+  },
+  twitter: { card: "summary_large_image", title, description },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0b0d" },
+  ],
+}
 
 // Figtree is variable (wght 300-900), so no `weight` is needed — the whole
 // 400-800 range the design system uses ships in a single file.

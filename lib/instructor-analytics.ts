@@ -9,6 +9,7 @@ import {
   type AnalyticsRange,
 } from "@/lib/config/instructor-analytics"
 import { db } from "@/lib/db"
+import { utcDayKey } from "@/lib/sql-date"
 import { getInstructorProfile } from "@/lib/instructor"
 import type { EnrollmentSource, Prisma } from "@/lib/generated/prisma/client"
 
@@ -283,8 +284,8 @@ export async function getAnalyticsPage(
   const seriesUntil = monthStart(0)
 
   const [monthRows, sourceGroups, courseGroups] = await Promise.all([
-    db.$queryRaw<{ month: Date; count: bigint | number }[]>`
-      SELECT date_trunc('month', e."createdAt" AT TIME ZONE 'UTC') AS month,
+    db.$queryRaw<{ month: string; count: bigint | number }[]>`
+      SELECT to_char(date_trunc('month', e."createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS month,
              COUNT(*)::bigint AS count
       FROM "enrollment" e
       JOIN "course" c ON c.id = e."courseId"
@@ -307,16 +308,14 @@ export async function getAnalyticsPage(
   ])
 
   // ---- the chart -----------------------------------------------------------
-  // `date_trunc(... AT TIME ZONE 'UTC')` returns a naive timestamp, which the
-  // driver hands back as a local-time Date; rebuilding the key from its UTC
-  // parts is what keeps it comparable with the boundaries below. Months with
+  // The bucket comes back as text and is keyed in UTC (`lib/sql-date.ts`), so
+  // it compares with the boundaries below in any time zone. Months with
   // no enrolments come back missing from the group, so the series is built
   // from the boundaries and *filled* from the result — a quiet month draws a
   // zero bar rather than vanishing and leaving five columns.
   const byMonth = new Map<number, number>()
   for (const row of monthRows) {
-    const key = Date.UTC(row.month.getFullYear(), row.month.getMonth(), 1)
-    byMonth.set(key, Number(row.count))
+    byMonth.set(utcDayKey(row.month), Number(row.count))
   }
   const months: EnrolmentMonth[] = Array.from(
     { length: ENROLMENT_MONTHS },

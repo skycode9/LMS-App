@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth"
 import { CERTIFICATES_PAGE_SIZE } from "@/lib/config/certificates"
 import { db } from "@/lib/db"
+import { utcDayKey } from "@/lib/sql-date"
 import type { Prisma } from "@/lib/generated/prisma/client"
 
 /**
@@ -132,8 +133,8 @@ const certificateSelect = {
  * window function and nobody can read afterwards.
  */
 async function longestStreak(userId: string): Promise<number> {
-  const rows = await db.$queryRaw<{ day: Date }[]>`
-    SELECT DISTINCT date_trunc('day', lp."completedAt" AT TIME ZONE 'UTC') AS day
+  const rows = await db.$queryRaw<{ day: string }[]>`
+    SELECT DISTINCT to_char(date_trunc('day', lp."completedAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day
     FROM "lesson_progress" lp
     JOIN "enrollment" e ON e.id = lp."enrollmentId"
     WHERE e."userId" = ${userId} AND lp."completedAt" IS NOT NULL
@@ -141,12 +142,9 @@ async function longestStreak(userId: string): Promise<number> {
   `
   if (rows.length === 0) return 0
 
-  // `date_trunc(... AT TIME ZONE 'UTC')` returns a naive timestamp, which the
-  // driver hands back as a local-time Date — rebuilding each key from its UTC
-  // parts is what keeps the day-to-day arithmetic exact across a DST boundary.
-  const days = rows.map((row) =>
-    Date.UTC(row.day.getFullYear(), row.day.getMonth(), row.day.getDate())
-  )
+  // Keyed in UTC from the text bucket (`lib/sql-date.ts`), which keeps the
+  // day-to-day arithmetic exact in any time zone and across a DST boundary.
+  const days = rows.map((row) => utcDayKey(row.day))
 
   let longest = 1
   let run = 1

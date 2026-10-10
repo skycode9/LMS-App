@@ -8,6 +8,7 @@ import { auth, getSession } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { countryCodes } from "@/lib/config/countries"
 import { INVITATION_TTL_DAYS, newUserRoles } from "@/lib/config/admin-users"
+import { DEMO_LOCKED_MESSAGE, touchesDemoAccount } from "@/lib/demo/guard"
 import type { UserPlan } from "@/lib/admin/users"
 import type { UserStatus } from "@/lib/generated/prisma/client"
 
@@ -86,6 +87,10 @@ export async function setUserStatus(
   const ids = [...new Set(userIds.filter((id) => typeof id === "string"))]
   if (ids.length === 0) {
     return { ok: false, message: "No accounts were selected." }
+  }
+
+  if (status === "SUSPENDED" && touchesDemoAccount(ids)) {
+    return { ok: false, message: DEMO_LOCKED_MESSAGE }
   }
 
   if (status === "SUSPENDED" && ids.includes(session.user.id)) {

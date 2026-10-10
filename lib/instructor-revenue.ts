@@ -5,6 +5,7 @@ import {
   PAYOUT_HISTORY_LIMIT,
 } from "@/lib/config/instructor-revenue"
 import { db } from "@/lib/db"
+import { utcDayKey } from "@/lib/sql-date"
 import type { PayoutMethodView } from "@/lib/instructor-payouts"
 import type { PayoutStatus, Prisma } from "@/lib/generated/prisma/client"
 
@@ -299,8 +300,8 @@ export async function getRevenuePage(): Promise<RevenuePage | null> {
   const seriesUntil = monthStart(0)
 
   const [monthRows, courseGroups, payoutRows] = await Promise.all([
-    db.$queryRaw<{ month: Date; cents: bigint | number }[]>`
-      SELECT date_trunc('month', "createdAt" AT TIME ZONE 'UTC') AS month,
+    db.$queryRaw<{ month: string; cents: bigint | number }[]>`
+      SELECT to_char(date_trunc('month', "createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS month,
              SUM("netCents")::bigint AS cents
       FROM "instructor_earning"
       WHERE "instructorId" = ${instructor.id}
@@ -333,16 +334,14 @@ export async function getRevenuePage(): Promise<RevenuePage | null> {
   ])
 
   // ---- the chart -----------------------------------------------------------
-  // `date_trunc(... AT TIME ZONE 'UTC')` returns a naive timestamp, which the
-  // driver hands back as a local-time Date; rebuilding the key from its UTC
-  // parts keeps it comparable with the boundaries below. Months with no
+  // The bucket comes back as text and is keyed in UTC (`lib/sql-date.ts`), so
+  // it compares with the boundaries below in any time zone. Months with no
   // earnings come back missing from the group, so the series is built from the
   // boundaries and *filled* — a quiet month draws a zero bar rather than
   // vanishing and leaving five columns.
   const byMonth = new Map<number, number>()
   for (const row of monthRows) {
-    const key = Date.UTC(row.month.getFullYear(), row.month.getMonth(), 1)
-    byMonth.set(key, Number(row.cents))
+    byMonth.set(utcDayKey(row.month), Number(row.cents))
   }
   const months: EarningMonth[] = Array.from(
     { length: EARNING_MONTHS },

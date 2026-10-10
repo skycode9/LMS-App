@@ -1,6 +1,7 @@
 import { cache } from "react"
 
 import { db } from "@/lib/db"
+import { utcDayKey } from "@/lib/sql-date"
 
 /**
  * Reads for `/dashboard/admin/reports`, from
@@ -238,8 +239,8 @@ export const getRevenueByMonth = cache(
     const from = monthStart(REVENUE_MONTHS)
     const until = monthStart(0)
 
-    const rows = await db.$queryRaw<{ month: Date; cents: bigint | number }[]>`
-    SELECT date_trunc('month', "paidAt" AT TIME ZONE 'UTC') AS month,
+    const rows = await db.$queryRaw<{ month: string; cents: bigint | number }[]>`
+    SELECT to_char(date_trunc('month', "paidAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS month,
            SUM("amountTotal")::bigint AS cents
     FROM "order"
     WHERE status = 'PAID' AND "paidAt" >= ${from} AND "paidAt" < ${until}
@@ -249,11 +250,9 @@ export const getRevenueByMonth = cache(
 
     const byMonth = new Map<number, number>()
     for (const row of rows) {
-      // `date_trunc(... AT TIME ZONE 'UTC')` returns a naive timestamp, which the
-      // driver hands back as a local-time Date; rebuilding the key from its UTC
-      // parts is what keeps it comparable with the boundaries below.
-      const month = Date.UTC(row.month.getFullYear(), row.month.getMonth(), 1)
-      byMonth.set(month, Number(row.cents))
+      // Text bucket keyed in UTC (`lib/sql-date.ts`), so it compares with
+      // the boundaries below in any time zone.
+      byMonth.set(utcDayKey(row.month), Number(row.cents))
     }
 
     const months: RevenueMonth[] = Array.from(

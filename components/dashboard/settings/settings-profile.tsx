@@ -18,7 +18,13 @@ function SettingsProfile({ profile }: { profile: Profile }) {
       <CardContent>
         <AvatarUpload image={profile.image} name={profile.name} />
         <div className="mt-7">
-          <ProfileForm profile={profile} />
+          {/* Keyed by the saved values (not the avatar, which has its own
+              control) so a successful save remounts the form with the new
+              defaults instead of changing an uncontrolled input's default. */}
+          <ProfileForm
+            key={JSON.stringify({ ...profile, image: null })}
+            profile={profile}
+          />
         </div>
       </CardContent>
     </Card>

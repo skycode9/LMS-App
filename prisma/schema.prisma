@@ -4,6 +4,11 @@
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
+  // Nested `select`/`include` load in ONE query (LATERAL joins) instead of one
+  // round trip per relation level. The course player's course → sections →
+  // lessons → quiz → questions → options read was six sequential trips to
+  // Neon (~55ms each) without it.
+  previewFeatures = ["relationJoins"]
 }
 
 // Prisma 7 reads the connection URL from prisma7.config.ts, not from here —

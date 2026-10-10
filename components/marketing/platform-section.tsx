@@ -128,7 +128,7 @@ function NoteTimeline() {
 
 function PlatformSection({ className }: { className?: string }) {
   return (
-    <section className={cn("w-full", className)}>
+    <section id="features" className={cn("w-full scroll-mt-20", className)}>
       <div className="mx-auto w-full max-w-[1200px] px-6 py-12 md:py-20">
         <p className="text-xs font-semibold tracking-[0.14em] text-subtle-foreground uppercase">
           The platform

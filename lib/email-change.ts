@@ -3,6 +3,8 @@ import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { MAX_EMAIL_LENGTH } from "@/lib/config/settings"
+import { isDemoUserId } from "@/lib/demo/config"
+import { DEMO_LOCKED_MESSAGE } from "@/lib/demo/guard"
 
 /**
  * Changing the address on your own account, shared by the learner's
@@ -58,6 +60,9 @@ export async function requestEmailChange(
   if (next.length === 0)
     return { status: "error", message: "Enter an email address." }
   if (next === currentEmail.trim().toLowerCase()) return { status: "unchanged" }
+  if (isDemoUserId(userId)) {
+    return { status: "error", message: DEMO_LOCKED_MESSAGE }
+  }
   if (!EMAIL_PATTERN.test(next)) {
     return { status: "error", message: "Enter a valid email address." }
   }

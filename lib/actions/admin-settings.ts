@@ -19,6 +19,7 @@ import {
   type BrandingAssetKind,
 } from "@/lib/config/admin-settings"
 import { emailChangeMessage, requestEmailChange } from "@/lib/email-change"
+import { platformSettingsLocked } from "@/lib/demo/guard"
 import { MAX_EMAIL_LENGTH, MAX_NAME_LENGTH } from "@/lib/config/settings"
 import { deleteBrandingAsset, putBrandingAsset } from "@/lib/storage"
 import type { PlatformSetting } from "@/lib/generated/prisma/client"
@@ -192,6 +193,14 @@ export async function updatePlatformSettings(
   const session = await requireAdmin()
   if (!session) return DENIED
 
+  if (platformSettingsLocked()) {
+    return {
+      ok: false,
+      message:
+        "Platform settings are read-only on the public demo, so every visitor sees the same site.",
+    }
+  }
+
   // Plain scalars rather than `Prisma.PlatformSettingUpdateInput`: that type
   // admits `{ set: … }` operation objects, which the `create` half of the
   // upsert below will not accept. A partial of the row itself is assignable
@@ -310,6 +319,14 @@ export async function uploadBrandingAsset(
 ): Promise<AdminSettingsResult> {
   const session = await requireAdmin()
   if (!session) return DENIED
+
+  if (platformSettingsLocked()) {
+    return {
+      ok: false,
+      message:
+        "Platform settings are read-only on the public demo, so every visitor sees the same site.",
+    }
+  }
 
   const kind = String(formData.get("kind") ?? "")
   if (kind !== "logo" && kind !== "favicon") {

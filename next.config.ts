@@ -70,6 +70,30 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "5mb",
     },
   },
+  /**
+   * The marketing nav and footer link to public paths the app serves under
+   * the dashboard instead. Redirecting here keeps every link on the site
+   * landing somewhere real (logged-out visitors meet the sign-in page, which
+   * offers the one-click demo accounts).
+   */
+  async redirects() {
+    return [
+      { source: "/features", destination: "/#features", permanent: false },
+      { source: "/changelog", destination: "/#features", permanent: false },
+      { source: "/courses", destination: "/dashboard/courses", permanent: false },
+      { source: "/categories", destination: "/dashboard/courses", permanent: false },
+      { source: "/certificates", destination: "/dashboard/certificates", permanent: false },
+      { source: "/business", destination: "/pricing", permanent: false },
+      { source: "/teach", destination: "/dashboard/instructor", permanent: false },
+      { source: "/teach/help", destination: "/dashboard/instructor/help", permanent: false },
+      { source: "/teach/standards", destination: "/dashboard/instructor/help", permanent: false },
+      {
+        source: "/teach/payouts",
+        destination: "/dashboard/instructor/settings/payouts",
+        permanent: false,
+      },
+    ]
+  },
   async headers() {
     return [
       {

@@ -17,7 +17,12 @@ function SettingsAccount({ account }: { account: Account }) {
   return (
     <Card className="[--card-spacing:--spacing(7.5)]">
       <CardContent>
-        <AccountForm account={account} timeZones={timeZoneOptions()} />
+        {/* Keyed by the saved values so a save remounts it with new defaults. */}
+        <AccountForm
+          key={JSON.stringify(account)}
+          account={account}
+          timeZones={timeZoneOptions()}
+        />
       </CardContent>
     </Card>
   )

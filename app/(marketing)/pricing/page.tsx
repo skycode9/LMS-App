@@ -2,9 +2,10 @@ import type { Metadata } from "next"
 
 import { PricingSection } from "@/components/marketing/pricing-section"
 import { getBusinessOffer } from "@/lib/subscription"
+import { siteConfig } from "@/lib/config/site"
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: `Pricing · ${siteConfig.name}`,
   description:
     "Buy a course outright, or unlock every course on Lumen with Lumen Business.",
 }

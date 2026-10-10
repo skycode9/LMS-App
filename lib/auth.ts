@@ -1,5 +1,5 @@
 import { cache } from "react"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { nextCookies } from "better-auth/next-js"
@@ -7,6 +7,7 @@ import { admin } from "better-auth/plugins/admin"
 
 import { siteConfig } from "@/lib/config/site"
 import { db } from "@/lib/db"
+import { demoAccountGuard } from "@/lib/demo/guard"
 import {
   sendChangeEmailConfirmation,
   sendInvitationEmail,
@@ -152,6 +153,12 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === "production",
   },
 
+  // The public demo's accounts can't have their password, email or standing
+  // changed — see `lib/demo/guard.ts`.
+  hooks: {
+    before: demoAccountGuard,
+  },
+
   // `nextCookies` must stay last — it reads what the other plugins set.
   plugins: [admin(), nextCookies()],
 })
@@ -167,6 +174,15 @@ export type SessionUser = Session["user"]
  * Reading `headers()` opts the calling route into dynamic rendering — that is
  * the price of a header that knows who you are without a logged-out flash.
  */
-export const getSession = cache(async () =>
-  auth.api.getSession({ headers: await headers() })
-)
+export const getSession = cache(async () => {
+  // The cookie header is rebuilt from `cookies()` rather than taken from
+  // `headers()`: inside a Server Action, `cookies()` already carries what the
+  // action just set, while `headers()` is frozen at the incoming request. A
+  // profile save refreshes Better Auth's session cookie cache, and the layout
+  // re-rendered in the same response has to read the *new* one — otherwise
+  // the sidebar keeps the old name and avatar until the next full reload.
+  const requestHeaders = new Headers(await headers())
+  const cookieHeader = (await cookies()).toString()
+  if (cookieHeader) requestHeaders.set("cookie", cookieHeader)
+  return auth.api.getSession({ headers: requestHeaders })
+})

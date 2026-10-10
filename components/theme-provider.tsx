@@ -10,8 +10,10 @@ function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      // Light by default (not the OS setting); the toggle and the "D" hotkey
+      // still switch to dark, and that choice is remembered.
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
       {...props}
     >

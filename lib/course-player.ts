@@ -535,16 +535,36 @@ export async function getLessonView(
   // enrolment, so somebody previewing a course they do not take reads false
   // rather than borrowing a student's progress.
   const session = await getSession()
-  const progress = session
-    ? await db.lessonProgress.findFirst({
-        where: {
-          lessonId: row.id!,
-          enrollment: { userId: session.user.id },
-          NOT: { completedAt: null },
-        },
-        select: { id: true },
-      })
-    : null
+  // The two reads below don't depend on each other, so they run together —
+  // one round trip to the database instead of two. A **locked** lesson's
+  // content is still never read: its query isn't started at all.
+  const [progress, lesson] = await Promise.all([
+    session
+      ? db.lessonProgress.findFirst({
+          where: {
+            lessonId: row.id!,
+            enrollment: { userId: session.user.id },
+            NOT: { completedAt: null },
+          },
+          select: { id: true },
+        })
+      : null,
+    row.locked
+      ? null
+      : // Scoped by the course slug as well as the id, so a lesson id from
+        // another course cannot be read through this one's page.
+        db.courseLesson.findFirst({
+          where: { id: row.id, section: { course: { slug: course.slug } } },
+          select: {
+            type: true,
+            title: true,
+            durationMinutes: true,
+            questionsCount: true,
+            articleBody: true,
+            videoAssetId: true,
+          },
+        }),
+  ])
 
   const base = {
     id: row.id!,
@@ -558,20 +578,6 @@ export async function getLessonView(
   }
 
   if (row.locked) return { ...base, kind: "locked", lessonKind: row.type }
-
-  // Scoped by the course slug as well as the id, so a lesson id from another
-  // course cannot be read through this one's page.
-  const lesson = await db.courseLesson.findFirst({
-    where: { id: row.id, section: { course: { slug: course.slug } } },
-    select: {
-      type: true,
-      title: true,
-      durationMinutes: true,
-      questionsCount: true,
-      articleBody: true,
-      videoAssetId: true,
-    },
-  })
   if (!lesson) return null
 
   if (lesson.type === "QUIZ") {

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/empty"
 import { CheckoutPayment } from "@/components/checkout/checkout-payment"
 import { CheckoutSummary } from "@/components/checkout/checkout-summary"
+import { TestCardNotice } from "@/components/demo/test-card-notice"
 import { createCheckoutSession } from "@/lib/actions/checkout"
 import { getCart } from "@/lib/cart"
 import { isStripeConfigured } from "@/lib/stripe"
@@ -90,6 +91,7 @@ export default async function Page() {
 
   return (
     <main className="mx-auto w-full max-w-[1012px] px-6 py-[18px]">
+      <TestCardNotice />
       {/* `items-stretch` is what carries the summary column's `--background`
           fill and the divider the full height of the taller payment column;
           without it each column would only be as tall as its own content and

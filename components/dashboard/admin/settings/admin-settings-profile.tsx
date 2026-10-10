@@ -25,7 +25,11 @@ function AdminSettingsProfile({ profile }: { profile: AdminProfile }) {
       <CardContent>
         <AvatarUpload image={profile.image} name={profile.name} />
         <div className="mt-7">
-          <AdminProfileForm profile={profile} />
+          {/* Keyed by the saved values so a save remounts it with new defaults. */}
+          <AdminProfileForm
+            key={`${profile.name}|${profile.email}`}
+            profile={profile}
+          />
         </div>
       </CardContent>
     </Card>

@@ -1,3 +1,4 @@
+import { DemoStrip } from "@/components/demo/demo-strip"
 import { SiteFooter } from "@/components/marketing/site-footer"
 import { SiteHeader } from "@/components/marketing/site-header"
 
@@ -12,6 +13,7 @@ export default function MarketingLayout({
 }) {
   return (
     <>
+      <DemoStrip />
       <SiteHeader />
       {children}
       <SiteFooter />

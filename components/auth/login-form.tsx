@@ -12,8 +12,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AuthSocialButtons } from "@/components/auth/auth-social-buttons"
 import { AuthDivider } from "@/components/auth/auth-divider"
+import { DemoSignIn } from "@/components/auth/demo-sign-in"
 import { PasswordInput } from "@/components/auth/password-input"
 import { authClient } from "@/lib/auth-client"
+import { DEMO_MODE } from "@/lib/demo/config"
 
 function LoginForm() {
   const router = useRouter()
@@ -54,7 +56,9 @@ function LoginForm() {
         Sign in to pick up where you left off.
       </p>
 
-      <AuthSocialButtons className="mt-8" onError={setError} />
+      {DEMO_MODE ? <DemoSignIn onError={setError} /> : null}
+
+      <AuthSocialButtons className={DEMO_MODE ? "mt-6" : "mt-8"} onError={setError} />
       <AuthDivider />
 
       <form onSubmit={onSubmit} className="flex flex-col">

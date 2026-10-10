@@ -4,7 +4,16 @@ export const siteConfig = {
   /** Footer strapline — shorter than the description, per the design. */
   tagline: "One platform for both sides of the classroom.",
   legalName: "Lumen Learning, Inc.",
-  url: "https://lumen.dev",
+  /**
+   * The deployment's own origin — certificate share links and OpenGraph
+   * image URLs are built from it. Set `NEXT_PUBLIC_SITE_URL` in production.
+   */
+  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, ""),
+} as const
+
+/** Where the project itself lives — shown in the footer. */
+export const siteLinks = {
+  repo: "https://github.com/skycode9/LMS-App",
 } as const
 
 export type NavItem = {
@@ -46,19 +55,18 @@ export const footerNav: NavGroup[] = [
     ],
   },
   {
-    title: "Company",
+    title: "Project",
     items: [
-      { title: "About", href: "/about" },
-      { title: "Careers", href: "/careers" },
-      { title: "Blog", href: "/blog" },
-      { title: "Contact", href: "/contact" },
+      { title: "Try the live demo", href: "/login" },
+      { title: "Source code", href: siteLinks.repo },
+      { title: "Pricing", href: "/pricing" },
+      { title: "Create an account", href: "/register" },
     ],
   },
 ]
 
 /** Bottom bar of the footer, opposite the copyright line. */
 export const footerLegalNav: NavItem[] = [
-  { title: "Privacy", href: "/privacy" },
-  { title: "Terms", href: "/terms" },
-  { title: "Status", href: "/status" },
+  { title: "GitHub", href: siteLinks.repo },
+  { title: "Demo accounts", href: "/login" },
 ]
